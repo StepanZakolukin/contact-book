@@ -12,5 +12,5 @@ public record GetContactResponse
 
     public required string Phone { get; init; }
     
-    public required string PhotoUrl { get; init; }
+    public required string? PhotoUrl { get; init; }
 }

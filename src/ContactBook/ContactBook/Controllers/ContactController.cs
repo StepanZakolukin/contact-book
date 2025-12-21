@@ -10,10 +10,14 @@ namespace ContactBook.Controllers;
 [Route("api/contacts")]
 public class ContactController : ControllerBase
 {
+    private const string PathToPhotos = "photo";
     private readonly ContactContext _context;
-    public ContactController(ContactContext context)
+    private readonly IS3StorageService _storageService;
+    
+    public ContactController(ContactContext context, IS3StorageService storageService)
     {
         _context = context;
+        _storageService = storageService;
     }
 
     [HttpGet]
@@ -22,19 +26,7 @@ public class ContactController : ControllerBase
         var list = new List<GetContactResponse>();
         
         foreach (var contact in await _context.Contacts.ToArrayAsync())
-        {
-            //TODO: получаем ссылку на картинку контакта если она есть
-
-            var response = new GetContactResponse
-            {
-                FullName = contact.FullName,
-                Email = contact.Email,
-                Phone = contact.Phone,
-                PhotoUrl = default
-            };
-            
-            list.Add(response);
-        }
+            list.Add(await ConvertToGetContactResponse(contact));
         
         return Ok(list);
     }
@@ -43,55 +35,51 @@ public class ContactController : ControllerBase
     public async Task<IActionResult> GetContact([FromRoute(Name = "contact-id")] Guid contactId)
     {
         var contact = await _context.Contacts.FindAsync(contactId);
-        
-        //TODO: получить временный url фото по пути в object-storage
-        
-        if (contact == null)
-            return NotFound();
 
-        return Ok(new GetContactResponse
-        {
-            FullName = contact.FullName,
-            Email = contact.Email,
-            Phone = contact.Phone,
-            PhotoUrl = default
-        });
+        return contact == null ? NotFound() : Ok(await ConvertToGetContactResponse(contact));
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateContact([FromForm] CreateContactRequest request)
+    public async Task<IActionResult> CreateContact([FromForm] CreateContactRequest request,
+        CancellationToken cancellationToken)
     {
-        //TODO: загружаем файл в object-storage если его передали и сохраняем путь до него в модели
+        var fileIsNotEmpty = request.Photo is not null && request.Photo.Length != 0;
+        
+        string? path = null;
+        if (fileIsNotEmpty)
+        {
+            path = Path.Combine(PathToPhotos, $"{Guid.NewGuid()}", Path.GetExtension(request.Photo!.FileName));
+            await SaveFileAsync(request.Photo, path, cancellationToken);
+        }
         
         var contact = new Contact
         {
             FullName = request.FullName,
             Email = request.Email,
             Phone = request.Phone,
-            Photo = new Photo
-            {
-                Path = default
-            }
+            Photo = fileIsNotEmpty ? new Photo {Path = path!} : null
         };
         
-        await _context.Contacts.AddAsync(contact);
-        await _context.SaveChangesAsync();
+        await _context.Contacts.AddAsync(contact, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(contact.Id);
     }
     
     [HttpDelete("{contact-id:guid}")]
-    public async Task<IActionResult> DeleteContact([FromRoute(Name = "contact-id")] Guid contactId)
+    public async Task<IActionResult> DeleteContact([FromRoute(Name = "contact-id")] Guid contactId,
+        CancellationToken cancellationToken)
     {
-        var contact = await _context.Contacts.FindAsync(contactId);
+        var contact = await _context.Contacts.FindAsync([contactId], cancellationToken: cancellationToken);
         if (contact == null)
             return NotFound();
         
         _context.Contacts.Remove(contact);
         
-        //TODO: удалить файл если есть
+        if (contact.Photo != null)
+            await _storageService.DeleteFileAsync(contact.Photo.Path, cancellationToken);
         
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         
         return NoContent();
     }
@@ -115,14 +103,47 @@ public class ContactController : ControllerBase
 
     [HttpPost("{contact-id:guid}/photo")]
     public async Task<IActionResult> UpdatePhoto([FromRoute(Name = "contact-id:guid")] Guid contactId,
-        [MaxFileSize(5 * 1024 * 1024), AllowedExtensions([".jpg", ".jpeg", ".png"])] IFormFile photo)
+        [MaxFileSize(5 * 1024 * 1024), AllowedExtensions([".jpg", ".jpeg", ".png"])] IFormFile photo,
+        CancellationToken cancellationToken)
     {
-        var contact = await _context.Contacts.FindAsync(contactId);
+        if (photo is null || photo.Length == 0)
+            return BadRequest("Загружен пустой файл");
+        
+        var contact = await _context.Contacts.FindAsync([contactId], cancellationToken);
 
         if (contact == null) return NotFound();
+
+        if (contact.Photo != null)
+            await _storageService.DeleteFileAsync(contact.Photo.Path, cancellationToken);
+        else
+            contact.Photo = new Photo { Path = Path.Combine(PathToPhotos, $"{Guid.NewGuid()}", Path.GetExtension(photo.FileName)) };
         
-        //TODO: удаляем старый, загружаем новый файл. Получаем ссылку на файл, отправляем в ответе
+        await SaveFileAsync(photo, contact.Photo.Path, cancellationToken);
         
-        return Ok();
+        return Ok(await _storageService.GetPreSignedURL(contact.Photo!.Path, TimeSpan.FromHours(3)));
+    }
+
+    private async Task<GetContactResponse> ConvertToGetContactResponse(Contact contact)
+    {
+        var photoUrl = string.Empty;
+        if (contact.Photo != null)
+            photoUrl = await _storageService.GetPreSignedURL(contact.Photo.Path, TimeSpan.FromHours(3));
+
+        return new GetContactResponse
+        {
+            FullName = contact.FullName,
+            Email = contact.Email,
+            Phone = contact.Phone,
+            PhotoUrl = photoUrl == string.Empty ? null : photoUrl,
+        };
+    }
+
+    private async Task SaveFileAsync(IFormFile file, string path, CancellationToken cancellationToken)
+    {
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+        
+        await _storageService.SaveFileAsync(memoryStream, path, file.ContentType, cancellationToken);
     }
 }

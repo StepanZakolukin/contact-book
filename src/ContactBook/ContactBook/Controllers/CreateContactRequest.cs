@@ -16,5 +16,5 @@ public record CreateContactRequest
     
     [MaxFileSize(5 * 1024 * 1024)]
     [AllowedExtensions([".jpg", ".jpeg", ".png"])]
-    public required IFormFile Photo { get; init; }
+    public IFormFile? Photo { get; init; }
 }

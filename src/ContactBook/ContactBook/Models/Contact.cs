@@ -15,7 +15,7 @@ public class Contact
     [Column("phone", TypeName = "varchar(16)")]
     public required string Phone { get; set; }
     
-    public Photo Photo { get; set; }
+    public Photo? Photo { get; set; }
     
     [Column("created_at", TypeName = "timestamptz")]
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
