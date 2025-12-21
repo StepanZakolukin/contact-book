@@ -13,7 +13,9 @@ builder.Host.UseSerilog(
 builder.Services.AddDbContext<ContactContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddControllers();
+builder.Services
+    .AddScoped<IS3StorageService, YandexS3StorageService>()
+    .AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services
@@ -21,8 +23,14 @@ builder.Services
     .AddSwaggerGen();
 
 var app = builder.Build();
-
 // Configure the HTTP request pipeline.
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ContactContext>();
+    db.Database.Migrate();
+}
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
