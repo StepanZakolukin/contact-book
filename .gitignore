@@ -46,6 +46,7 @@ CodeCoverage/
 .idea
 *.DotSettings.user
 *.pfx
+**/*.env
 
 # MSBuild Binary and Structured Log
 *.binlog
