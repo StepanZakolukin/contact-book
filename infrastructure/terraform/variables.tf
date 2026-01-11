@@ -5,25 +5,20 @@ variable "cloud_id" {
 
 variable "folder_id" {
   type        = string
-  description = "ID директории в облаке"
+  description = "ID каталога"
 }
 
-variable "default_availability_zone" {
+variable "bucket_name" {
   type        = string
-  description = "Зона доступности по умолчанию"
+  description = "Имя Object Storage bucket (должно быть глобально уникальным)"
 }
 
-variable "ssh-keys" {
+variable "service_account_name" {
   type        = string
-  description = "Публичные ssh ключи"
+  default     = "object-storage-sa"
 }
 
-variable "app_image_id" {
+variable "storage_class" {
   type        = string
-  description = "ID образа диска приложения"
-}
-
-variable "database_image_id" {
-  type        = string
-  description = "ID образа диска базы данных"
+  default     = "STANDARD"
 }

@@ -1,57 +1,21 @@
-resource "yandex_compute_instance" "app_server" {
-  name = "app_server-${formatdate("YYYYMMDD", timestamp())}"
-  description = "VM с ASP.NET приложением"
-
-  resources {
-    cores  = 2   # Кол-во ядер
-    memory = 2   # Оперативная память в ГБ
-  }
-
-  boot_disk {
-    initialize_params {
-      image_id = var.app_image_id
-    }
-  }
-
-  network_interface {
-    subnet_id = yandex_vpc_subnet.private_subnet.id
-    nat       = true
-  }
-
-  metadata = {
-    ssh-keys = var.ssh-keys
-  }
-
-  lifecycle {
-    ignore_changes = [name]
-  }
+resource "yandex_iam_service_account" "sa" {
+  name        = var.service_account_name
+  description = "Service account for Object Storage access"
 }
 
-resource "yandex_compute_instance" "database" {
-  name = "database-${formatdate("YYYYMMDD", timestamp())}"
-  description = "VM с базой данных для ASP.NET приложения"
+resource "yandex_iam_service_account_static_access_key" "sa_keys" {
+  service_account_id = yandex_iam_service_account.sa.id
+  description        = "Static access key for Object Storage"
+}
 
-  resources {
-    cores  = 2   # Кол-во ядер
-    memory = 2   # Оперативная память в ГБ
-  }
+resource "yandex_resourcemanager_folder_iam_member" "sa_storage_role" {
+  folder_id = var.folder_id
+  role      = "storage.editor"
+  member    = "serviceAccount:${yandex_iam_service_account.sa.id}"
+}
 
-  boot_disk {
-    initialize_params {
-      image_id = var.database_image_id
-    }
-  }
-
-  network_interface {
-    subnet_id = yandex_vpc_subnet.db_subnet.id
-    nat       = true
-  }
-
-  metadata = {
-    ssh-keys = var.ssh-keys
-  }
-
-  lifecycle {
-    ignore_changes = [name]
-  }
+resource "yandex_storage_bucket" "bucket" {
+  bucket = var.bucket_name
+  folder_id = var.folder_id
+  default_storage_class = var.storage_class
 }
