@@ -36,11 +36,13 @@ variable "registry_id" {
 }
 
 variable "app_image_name" {
-  type = string
+  type        = string
   description = "Название docker-образа приложения"
+  default     = "contact-book"
 }
 
 variable "app_image_tag" {
-  type = string
+  type        = string
   description = "Тег docker-образа приложения"
+  default     = "latest"
 }
