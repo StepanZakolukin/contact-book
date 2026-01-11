@@ -19,7 +19,7 @@ resource "yandex_compute_instance" "app_server" {
   }
 
   metadata = {
-    ssh-keys = var.ssh-keys
+    ssh-keys = "yc-user:${var.ssh_key}"
   }
 
   lifecycle {
@@ -48,7 +48,7 @@ resource "yandex_compute_instance" "database" {
   }
 
   metadata = {
-    ssh-keys = var.ssh-keys
+    ssh-keys = "yc-user:${var.ssh_key}"
   }
 
   lifecycle {
