@@ -14,7 +14,6 @@ source "yandex" "postgresql" {
   image_description   = "Образ диска c PostgreSQL, работающим в docker-контейнере"
   source_image_id     = var.source_image_id
   image_name          = "postgresql-image"
-  subnet_id           = var.db_subnet_id
   disk_type           = "network-ssd"
   zone                = var.default_availability_zone
 }
@@ -26,7 +25,6 @@ source "yandex" "app_server" {
   image_description   = "Образ диска c приложением, работающим в docker-контейнере"
   source_image_id     = var.source_image_id
   image_name          = "app-server-image"
-  subnet_id           = var.app_subnet_id
   disk_type           = "network-ssd"
   zone                = var.default_availability_zone
   service_account_id  = var.service_account_puller_id

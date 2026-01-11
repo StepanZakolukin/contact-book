@@ -3,16 +3,6 @@ variable "folder_id" {
   description = "ID директории в облаке"
 }
 
-variable "db_subnet_id" {
-  type        = string
-  description = "ID подсети с базой данных"
-}
-
-variable "app_subnet_id" {
-  type        = string
-  description = "ID подсети с инстансами приложения"
-}
-
 variable "default_availability_zone" {
   type        = string
   description = "Зона доступности по умолчанию"
