@@ -6,11 +6,11 @@ EXPOSE 8081
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR "/src/ContactBook"
-COPY ["ContactBook/ContactBook.csproj", "ContactBook/"]
-RUN dotnet restore "ContactBook/ContactBook.csproj"
+WORKDIR /src
+COPY ["ContactBook/ContactBook/ContactBook.csproj", "ContactBook/ContactBook/"]
+RUN dotnet restore "ContactBook/ContactBook/ContactBook.csproj"
 COPY . .
-WORKDIR "/src/ContactBook/ContactBook"
+WORKDIR "/src/ContactBook/ContactBook/"
 RUN dotnet build "./ContactBook.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
