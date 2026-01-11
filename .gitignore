@@ -47,6 +47,7 @@ CodeCoverage/
 *.DotSettings.user
 *.pfx
 **/*.env
+**/*.auto.pkrvars.hcl
 
 # MSBuild Binary and Structured Log
 *.binlog
