@@ -12,3 +12,18 @@ variable "default_availability_zone" {
   type        = string
   description = "Зона доступности по умолчанию"
 }
+
+variable "ssh-keys" {
+  type        = string
+  description = "Публичные ssh ключи"
+}
+
+variable "app_image_id" {
+  type        = string
+  description = "ID образа диска приложения"
+}
+
+variable "database_image_id" {
+  type        = string
+  description = "ID образа диска базы данных"
+}

@@ -25,7 +25,7 @@ variable "postgres_pwd" {
 
 variable "source_image_id" {
   type        = string
-  description = "Образ загрузочного диска"
+  description = "ID образа загрузочного диска, c предустановленным Docker"
   default     = "fd8j5voj4pc21791fc8o"
 }
 
