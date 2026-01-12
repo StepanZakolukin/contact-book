@@ -13,11 +13,12 @@ source "yandex" "postgresql" {
   disk_size_gb        = 15
   ssh_username        = var.ssh_username
   use_ipv4_nat        = "true"
-  image_description   = "Образ диска c PostgreSQL, работающим в docker-контейнере"
+  image_description   = "Образ диска c PostgreSQL"
   source_image_family = "container-optimized-image"
   image_name          = "postgresql-image"
   disk_type           = "network-ssd"
   zone                = var.default_availability_zone
+
   metadata = {
     ssh-keys = "${var.ssh_username}:${var.ssh_key}"
 
@@ -66,12 +67,13 @@ source "yandex" "app_server" {
   disk_size_gb        = 15
   ssh_username        = var.ssh_username
   use_ipv4_nat        = "true"
-  image_description   = "Образ диска c приложением, работающим в docker-контейнере"
+  image_description   = "Образ диска c ASP.NET приложением"
   source_image_family = "container-optimized-image"
   image_name          = "app-server-image"
   disk_type           = "network-ssd"
   zone                = var.default_availability_zone
   service_account_id  = var.service_account_puller_id
+
   metadata = {
     ssh-keys = "${var.ssh_username}:${var.ssh_key}"
 
@@ -81,6 +83,24 @@ source "yandex" "app_server" {
           {
             image = "cr.yandex/${var.registry_id}/${var.app_image_name}:${var.app_image_tag}"
             name  = "app"
+            env = [
+              {
+                name  = "ConnectionStrings__DefaultConnection"
+                value = ""
+              },
+              {
+                name  = "YandexS3_SecretKey"
+                value = ""
+              },
+              {
+                name  = "YandexS3_AccessKey"
+                value = ""
+              },
+              {
+                name  = "YandexS3_BucketName"
+                value = ""
+              }
+            ]
             logConfig = {
               type = "json-file"
               options = {
@@ -91,13 +111,11 @@ source "yandex" "app_server" {
             securityContext = {
               privileged = false
             }
-            tty = false
-            stdin = false
             restartPolicy = "Always"
             portBindings = [
               {
-                containerPort = 80
-                hostPort      = 80
+                containerPort = 5000
+                hostPort      = 5000
               }
             ]
           }
@@ -112,4 +130,8 @@ build {
     "source.yandex.postgresql",
     "source.yandex.app_server"
   ]
+
+  provisioner "shell" {
+    inline = ["echo 'Image build complete'"]
+  }
 }
