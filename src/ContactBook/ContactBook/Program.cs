@@ -20,7 +20,8 @@ builder.Services
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services
     .AddEndpointsApiExplorer()
-    .AddSwaggerGen();
+    .AddSwaggerGen()
+    .AddHealthChecks();
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.
@@ -35,9 +36,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
