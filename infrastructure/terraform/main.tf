@@ -26,8 +26,8 @@ resource "yandex_storage_bucket" "bucket" {
 resource "yandex_compute_instance" "app_server" {
   name        = "app-server-${formatdate("YYYYMMDD", timestamp())}"
   platform_id = "standard-v3"
-  zone        = "ru-central1-a"
-
+  zone        = var.default_availability_zone
+  
   resources {
     cores  = 2
     memory = 2

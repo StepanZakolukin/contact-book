@@ -43,3 +43,8 @@ variable "postgres_pwd" {
   type        = string
   sensitive   = true
 }
+
+variable "default_availability_zone" {
+  type        = string
+  default 	  = "ru-central1-a"
+}
