@@ -8,17 +8,6 @@ variable "default_availability_zone" {
   description = "Зона доступности по умолчанию"
 }
 
-variable "postgres_pwd" {
-  type        = string
-  description = "Пароль от базы данных PostgreSQL"
-}
-
-variable "source_image_id" {
-  type        = string
-  description = "ID образа загрузочного диска, c предустановленным Docker"
-  default     = "fd8j5voj4pc21791fc8o"
-}
-
 variable "ssh_username" {
   type        = string
   description = "Имя пользователя от которого будут выполняться действия с ресурсом"
