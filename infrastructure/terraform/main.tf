@@ -27,7 +27,7 @@ resource "yandex_compute_instance" "app_server" {
   name        = "app-server-${formatdate("YYYYMMDD", timestamp())}"
   platform_id = "standard-v3"
   zone        = var.default_availability_zone
-  
+
   resources {
     cores  = 2
     memory = 2
@@ -81,49 +81,6 @@ resource "yandex_compute_instance" "app_server" {
 
   lifecycle {
     ignore_changes = [name]
-  }
-}
-
-resource "yandex_vpc_network_load_balancer_target_group" "app_tg" {
-  name       = "app-target-group"
-  folder_id  = var.folder_id
-  network_id = yandex_vpc_network.app_vpc.id
-
-  dynamic "target" {
-    for_each = [yandex_compute_instance.app_server]
-    content {
-      address   = target.value.network_interface[0].ip_address
-      subnet_id = yandex_vpc_subnet.private_subnet.id
-    }
-  }
-}
-
-resource "yandex_vpc_network_load_balancer" "app_nlb" {
-  name      = "app-nlb"
-  folder_id = var.folder_id
-
-  listener {
-    name        = "app-tcp-5000"
-    port        = 5000
-    target_port = 5000
-    protocol    = "TCP"
-
-    external_address_spec {
-      ip_version = "IPV4"
-      type       = "EXTERNAL"
-    }
-
-    healthcheck {
-      name     = "app-healthcheck"
-      protocol = "TCP"
-      port     = 5000
-      interval = 5
-      timeout  = 2
-      unhealthy_threshold = 3
-      healthy_threshold   = 2
-    }
-
-    target_group_ids = [yandex_vpc_network_load_balancer_target_group.app_tg.id]
   }
 }
 
