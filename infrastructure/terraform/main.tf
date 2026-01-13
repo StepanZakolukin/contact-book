@@ -28,6 +28,12 @@ resource "yandex_compute_instance" "app_server" {
   platform_id = "standard-v3"
   zone        = var.default_availability_zone
 
+  depends_on = [
+    yandex_compute_instance.database,
+    yandex_iam_service_account_static_access_key.sa_keys,
+    yandex_storage_bucket.bucket
+  ]
+
   resources {
     cores  = 2
     memory = 2
@@ -48,35 +54,33 @@ resource "yandex_compute_instance" "app_server" {
 
   metadata = {
     ssh-keys = "yc-user:${var.ssh_key}"
-
-    docker-container-declaration = yamlencode({
-      spec = {
-        containers = [
-          {
-            image = "cr.yandex/${var.registry_id}/${var.app_image_name}:latest"
-            name  = "app"
-			env = [
-				{
-					name  = "ConnectionStrings__DefaultConnection"
-					value = "Host=${yandex_compute_instance.database.network_interface.0.ip_address};Port=5432;Database=postgres;Username=postgres;Password=${var.postgres_pwd}"
-				},
-				{
-					name  = "YandexS3_SecretKey"
-					value = yandex_iam_service_account_static_access_key.sa_keys.secret_key
-				},
-				{
-					name  = "YandexS3_AccessKey"
-					value = yandex_iam_service_account_static_access_key.sa_keys.access_key
-				},
-				{
-					name  = "YandexS3_BucketName"
-					value = yandex_storage_bucket.bucket.bucket
-				}
-			]
-          }
-        ]
-      }
-    })
+    
+    user-data = <<-EOF
+      #!/bin/bash
+      
+      # Получаем IP адрес базы данных
+      DB_IP=${yandex_compute_instance.database.network_interface[0].ip_address}
+      POSTGRES_PASSWORD=${var.postgres_pwd}
+      ACCESS_KEY=${yandex_iam_service_account_static_access_key.sa_keys.access_key}
+      SECRET_KEY=${yandex_iam_service_account_static_access_key.sa_keys.secret_key}
+      BUCKET_NAME=${yandex_storage_bucket.bucket.bucket}
+      
+      # Останавливаем и удаляем старый контейнер
+      docker stop app || true
+      docker rm app || true
+      
+      # Запускаем новый контейнер
+      docker run -d \
+        --name app \
+        --restart unless-stopped \
+        -e ConnectionStrings__DefaultConnection="Host=$${DB_IP};Port=5432;Database=postgres;Username=postgres;Password=$${POSTGRES_PASSWORD}" \
+        -e YandexS3_AccessKey="$${ACCESS_KEY}" \
+        -e YandexS3_SecretKey="$${SECRET_KEY}" \
+        -e YandexS3_BucketName="$${BUCKET_NAME}" \
+        -p 80:8080 \
+        -p 443:443 \
+        cr.yandex/${var.registry_id}/${var.app_image_name}:latest
+    EOF
   }
 
   lifecycle {
