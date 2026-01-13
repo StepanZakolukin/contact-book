@@ -114,8 +114,7 @@ resource "yandex_compute_instance" "app_servers" {
   network_interface {
     subnet_id = element([
       yandex_vpc_subnet.private_subnet_a.id,
-      yandex_vpc_subnet.private_subnet_b.id,
-      yandex_vpc_subnet.private_subnet_c.id
+      yandex_vpc_subnet.private_subnet_b.id
     ], count.index % length(var.availability_zones))
     nat       = true
     security_group_ids = [yandex_vpc_security_group.app_sg.id]
