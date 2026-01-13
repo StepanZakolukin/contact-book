@@ -39,7 +39,7 @@ resource "yandex_lb_network_load_balancer" "app_nlb" {
     healthcheck {
       name = "http-healthcheck"
       http_options {
-        port = 80
+        port = 5000
         path = "/health"
       }
       healthy_threshold   = 2
@@ -110,6 +110,7 @@ resource "yandex_compute_instance" "app_server" {
   network_interface {
     subnet_id = yandex_vpc_subnet.private_subnet.id
     nat       = true
+	security_group_ids = [yandex_vpc_security_group.app_sg.id]
   }
 
   metadata = {
@@ -134,8 +135,7 @@ resource "yandex_compute_instance" "app_server" {
         -e YandexS3__AccessKey="$${ACCESS_KEY}" \
         -e YandexS3__SecretKey="$${SECRET_KEY}" \
         -e YandexS3__BucketName="$${BUCKET_NAME}" \
-        -p 80:8080 \
-        -p 443:443 \
+        -p 5000:8080 \
         cr.yandex/${var.registry_id}/${var.app_image_name}:latest
     EOF
   }
