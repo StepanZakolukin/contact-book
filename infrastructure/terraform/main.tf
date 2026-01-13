@@ -2,17 +2,19 @@ resource "yandex_lb_target_group" "app_target_group" {
   name      = "app-target-group"
   region_id = "ru-central1"
 
-  target {
-    subnet_id  = yandex_vpc_subnet.private_subnet.id
-    address    = yandex_compute_instance.app_server.network_interface.0.ip_address
+  dynamic "target" {
+    for_each = yandex_compute_instance.app_servers
+    content {
+      subnet_id = yandex_vpc_subnet.private_subnet.id
+      address   = target.value.network_interface.0.ip_address
+    }
   }
 
   depends_on = [
-    yandex_compute_instance.app_server
+    yandex_compute_instance.app_servers
   ]
 }
 
-# Network Load Balancer
 resource "yandex_lb_network_load_balancer" "app_nlb" {
   name = "app-nlb"
   type = "external"
@@ -83,10 +85,11 @@ resource "yandex_storage_bucket" "bucket" {
   ]
 }
 
-resource "yandex_compute_instance" "app_server" {
-  name        = "app-server-${formatdate("YYYYMMDD", timestamp())}"
+resource "yandex_compute_instance" "app_servers" {
+  count       = var.app_replica_count
+  name        = "app-server-${count.index + 1}-${formatdate("YYYYMMDD", timestamp())}"
   platform_id = "standard-v3"
-  zone        = var.default_availability_zone
+  zone        = element(var.availability_zones, count.index % length(var.availability_zones))
 
   depends_on = [
     yandex_compute_instance.database,
@@ -110,7 +113,7 @@ resource "yandex_compute_instance" "app_server" {
   network_interface {
     subnet_id = yandex_vpc_subnet.private_subnet.id
     nat       = true
-	security_group_ids = [yandex_vpc_security_group.app_sg.id]
+    security_group_ids = [yandex_vpc_security_group.app_sg.id]
   }
 
   metadata = {
@@ -119,24 +122,41 @@ resource "yandex_compute_instance" "app_server" {
     user-data = <<-EOF
       #!/bin/bash
       
+      # Добавляем hostname для идентификации реплики
+      echo "app-server-${count.index + 1}" > /etc/hostname
+      hostname "app-server-${count.index + 1}"
+      
       DB_IP=${yandex_compute_instance.database.network_interface[0].ip_address}
       POSTGRES_PASSWORD=${var.postgres_pwd}
       ACCESS_KEY=${yandex_iam_service_account_static_access_key.sa_keys.access_key}
       SECRET_KEY=${yandex_iam_service_account_static_access_key.sa_keys.secret_key}
       BUCKET_NAME=${yandex_storage_bucket.bucket.bucket}
       
+      # Останавливаем старый контейнер
       docker stop app || true
       docker rm app || true
       
+      # Запускаем приложение с уникальным идентификатором реплики
       docker run -d \
         --name app \
         --restart unless-stopped \
+        --hostname app-server-${count.index + 1} \
         -e ConnectionStrings__DefaultConnection="Host=$${DB_IP};Port=5432;Database=postgres;Username=postgres;Password=$${POSTGRES_PASSWORD}" \
         -e YandexS3__AccessKey="$${ACCESS_KEY}" \
         -e YandexS3__SecretKey="$${SECRET_KEY}" \
         -e YandexS3__BucketName="$${BUCKET_NAME}" \
+        -e ASPNETCORE_ENVIRONMENT="Production" \
+        -e REPLICA_ID="${count.index + 1}" \
         -p 5000:8080 \
         cr.yandex/${var.registry_id}/${var.app_image_name}:latest
+      
+      # Создаем health check эндпоинт с информацией о реплике
+      sleep 5
+      
+      # Проверяем запуск
+      echo "Rеплика ${count.index + 1} запущена в зоне $(hostname)"
+      echo "Внутренний IP: $(hostname -I | awk '{print $1}')"
+      echo "Внешний IP: $(curl -s ifconfig.me)"
     EOF
   }
 

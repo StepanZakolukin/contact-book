@@ -48,3 +48,9 @@ variable "default_availability_zone" {
   type        = string
   default 	  = "ru-central1-a"
 }
+
+variable "app_replica_count" {
+  description = "Количество реплик приложения"
+  type        = number
+  default     = 3
+}
