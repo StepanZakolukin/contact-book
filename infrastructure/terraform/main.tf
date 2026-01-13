@@ -1,3 +1,63 @@
+resource "yandex_lb_target_group" "app_target_group" {
+  name      = "app-target-group"
+  region_id = "ru-central1"
+
+  target {
+    subnet_id  = yandex_vpc_subnet.private_subnet.id
+    address    = yandex_compute_instance.app_server.network_interface.0.ip_address
+  }
+
+  depends_on = [
+    yandex_compute_instance.app_server
+  ]
+}
+
+# Network Load Balancer
+resource "yandex_lb_network_load_balancer" "app_nlb" {
+  name = "app-nlb"
+  type = "external"
+
+  listener {
+    name = "http-listener"
+    port = 80
+    external_address_spec {
+      ip_version = "ipv4"
+    }
+  }
+
+  listener {
+    name = "https-listener"
+    port = 443
+    external_address_spec {
+      ip_version = "ipv4"
+    }
+  }
+
+  attached_target_group {
+    target_group_id = yandex_lb_target_group.app_target_group.id
+
+    healthcheck {
+      name = "http-healthcheck"
+      http_options {
+        port = 80
+        path = "/health"
+      }
+      healthy_threshold   = 2
+      unhealthy_threshold = 2
+      timeout             = 1
+      interval            = 2
+    }
+  }
+}
+
+resource "yandex_vpc_address" "nlb_external_ip" {
+  name = "nlb-external-ip"
+
+  external_ipv4_address {
+    zone_id = var.default_availability_zone
+  }
+}
+
 resource "yandex_iam_service_account" "sa" {
   name        = var.service_account_name
   description = "Service account for Object Storage access"
