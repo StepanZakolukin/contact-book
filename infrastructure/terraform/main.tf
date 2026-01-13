@@ -58,18 +58,15 @@ resource "yandex_compute_instance" "app_server" {
     user-data = <<-EOF
       #!/bin/bash
       
-      # Получаем IP адрес базы данных
       DB_IP=${yandex_compute_instance.database.network_interface[0].ip_address}
       POSTGRES_PASSWORD=${var.postgres_pwd}
       ACCESS_KEY=${yandex_iam_service_account_static_access_key.sa_keys.access_key}
       SECRET_KEY=${yandex_iam_service_account_static_access_key.sa_keys.secret_key}
       BUCKET_NAME=${yandex_storage_bucket.bucket.bucket}
       
-      # Останавливаем и удаляем старый контейнер
       docker stop app || true
       docker rm app || true
       
-      # Запускаем новый контейнер
       docker run -d \
         --name app \
         --restart unless-stopped \
@@ -91,6 +88,7 @@ resource "yandex_compute_instance" "app_server" {
 resource "yandex_compute_instance" "database" {
   name = "database-${formatdate("YYYYMMDD", timestamp())}"
   platform_id = "standard-v3"
+  zone        = var.default_availability_zone
 
   resources {
     cores  = 2
@@ -109,18 +107,69 @@ resource "yandex_compute_instance" "database" {
   network_interface {
     subnet_id = yandex_vpc_subnet.db_subnet.id
     nat       = true
+    security_group_ids = [yandex_vpc_security_group.db_sg.id]
   }
 
   metadata = {
     ssh-keys = "yc-user:${var.ssh_key}"
+    
     user-data = <<-EOF
-      #cloud-config
-      runcmd:
-        - [ systemctl, start, docker ]
-        - [ systemctl, enable, docker ]
-        - [ mkdir, -p, /var/lib/postgresql/data ]
-        - [ chmod, 777, /var/lib/postgresql/data ]
-        - [ docker, run, -d, --name, postgres, --restart, always, -e, POSTGRES_PASSWORD=${var.postgres_pwd}, -p, 5432:5432, -v, /var/lib/postgresql/data:/var/lib/postgresql/data, postgres:16-alpine ]
+      #!/bin/bash
+      
+      exec > /var/log/postgres-setup.log 2>&1
+      echo "=== Начало настройки PostgreSQL ==="
+      date
+      
+      # Устанавливаем Docker если нет
+      if ! command -v docker &> /dev/null; then
+        echo "Установка Docker..."
+        apt-get update
+        apt-get install -y docker.io
+      fi
+      
+      # Запускаем Docker
+      echo "Запуск Docker..."
+      systemctl start docker
+      systemctl enable docker
+      sleep 3
+      
+      # Останавливаем и удаляем старый контейнер
+      echo "Очистка старого контейнера..."
+      docker stop postgres || true
+      docker rm postgres || true
+      
+      # Чистим директорию данных (осторожно - удалит все данные!)
+      echo "Очистка директории данных..."
+      rm -rf /var/lib/postgresql/data/*
+      rm -rf /var/lib/postgresql/data/.* 2>/dev/null || true
+      
+      # Создаем чистую директорию
+      mkdir -p /var/lib/postgresql/data
+      chown -R 999:999 /var/lib/postgresql/data  # PostgreSQL в контейнере использует UID 999
+      chmod 700 /var/lib/postgresql/data  # Важно для безопасности PostgreSQL
+      
+      # Запускаем PostgreSQL
+      echo "Запуск PostgreSQL контейнера..."
+      docker run -d \
+        --name postgres \
+        --restart unless-stopped \
+        -e POSTGRES_PASSWORD=${var.postgres_pwd} \
+        -e POSTGRES_DB=postgres \
+        -p 0.0.0.0:5432:5432 \
+        -v /var/lib/postgresql/data:/var/lib/postgresql/data \
+        postgres:16-alpine
+      
+      echo "Ожидание запуска PostgreSQL (30 секунд)..."
+      sleep 30
+      
+      echo "Статус контейнера:"
+      docker ps
+      
+      echo "Логи PostgreSQL:"
+      docker logs postgres --tail 20
+      
+      echo "=== Настройка PostgreSQL завершена ==="
+      date
     EOF
   }
 
