@@ -131,9 +131,9 @@ resource "yandex_compute_instance" "app_server" {
         --name app \
         --restart unless-stopped \
         -e ConnectionStrings__DefaultConnection="Host=$${DB_IP};Port=5432;Database=postgres;Username=postgres;Password=$${POSTGRES_PASSWORD}" \
-        -e YandexS3_AccessKey="$${ACCESS_KEY}" \
-        -e YandexS3_SecretKey="$${SECRET_KEY}" \
-        -e YandexS3_BucketName="$${BUCKET_NAME}" \
+        -e YandexS3__AccessKey="$${ACCESS_KEY}" \
+        -e YandexS3__SecretKey="$${SECRET_KEY}" \
+        -e YandexS3__BucketName="$${BUCKET_NAME}" \
         -p 80:8080 \
         -p 443:443 \
         cr.yandex/${var.registry_id}/${var.app_image_name}:latest
