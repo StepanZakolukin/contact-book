@@ -5,8 +5,8 @@ resource "yandex_lb_target_group" "app_target_group" {
   dynamic "target" {
     for_each = yandex_compute_instance.app_servers
     content {
-      subnet_id = yandex_vpc_subnet.private_subnet.id
-      address   = target.value.network_interface.0.ip_address
+      subnet_id = target.value.network_interface[0].subnet_id
+      address   = target.value.network_interface[0].ip_address
     }
   }
 
@@ -110,8 +110,13 @@ resource "yandex_compute_instance" "app_servers" {
     }
   }
 
+  # Динамически выбираем подсеть в зависимости от зоны
   network_interface {
-    subnet_id = yandex_vpc_subnet.private_subnet.id
+    subnet_id = element([
+      yandex_vpc_subnet.private_subnet_a.id,
+      yandex_vpc_subnet.private_subnet_b.id,
+      yandex_vpc_subnet.private_subnet_c.id
+    ], count.index % length(var.availability_zones))
     nat       = true
     security_group_ids = [yandex_vpc_security_group.app_sg.id]
   }

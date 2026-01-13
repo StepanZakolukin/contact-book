@@ -5,21 +5,12 @@ resource "yandex_vpc_security_group" "app_sg" {
   folder_id   = var.folder_id
   network_id  = yandex_vpc_network.app_vpc.id
 
-  # Входящий: трафик на порт приложения.
-  # Для простоты разрешил вход на 5000/TCP.
+  # Разрешить трафик из всех подсетей приложения
   ingress {
     protocol       = "TCP"
-    v4_cidr_blocks = ["0.0.0.0/0"]
+    v4_cidr_blocks = ["10.0.2.0/24", "10.0.12.0/24", "10.0.22.0/24"]
     port           = 5000
-    description    = "Allow inbound TCP to app port (forwarded by external NLB)"
-  }
-
-  # Входящий если будет несколько VM
-  ingress {
-    protocol       = "TCP"
-    v4_cidr_blocks = ["10.0.2.0/24"]
-    port           = 5000
-    description    = "Allow inter-instance communication in app subnet"
+    description    = "Allow inter-instance communication in all app subnets"
   }
 
   # Исходящий к базе данных
@@ -30,7 +21,7 @@ resource "yandex_vpc_security_group" "app_sg" {
     description    = "Allow outbound to PostgreSQL"
   }
 
-  # Исходящий: в интернет (через NAT по таблице маршрутизации)
+  # Исходящий: в интернет
   egress {
     protocol       = "ANY"
     v4_cidr_blocks = ["0.0.0.0/0"]

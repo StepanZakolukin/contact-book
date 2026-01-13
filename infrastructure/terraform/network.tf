@@ -31,13 +31,35 @@ resource "yandex_vpc_route_table" "private_rt" {
 # ===== SUBNETS =====
 # Private подсеть (ASP.NET приложение)
 # Приватная подсеть выходит в интернет через NAT (route_table_id)
-resource "yandex_vpc_subnet" "private_subnet" {
-  name           = "private-subnet"
-  description    = "Private subnet for ASP.NET app (egress via NAT)"
+resource "yandex_vpc_subnet" "private_subnet_a" {
+  name           = "private-subnet-a"
+  description    = "Private subnet for ASP.NET app in zone A"
   folder_id      = var.folder_id
   network_id     = yandex_vpc_network.app_vpc.id
   zone           = "ru-central1-a"
   v4_cidr_blocks = ["10.0.2.0/24"]
+  route_table_id = yandex_vpc_route_table.private_rt.id
+}
+
+# Private подсеть в зоне B
+resource "yandex_vpc_subnet" "private_subnet_b" {
+  name           = "private-subnet-b"
+  description    = "Private subnet for ASP.NET app in zone B"
+  folder_id      = var.folder_id
+  network_id     = yandex_vpc_network.app_vpc.id
+  zone           = "ru-central1-b"
+  v4_cidr_blocks = ["10.0.12.0/24"]
+  route_table_id = yandex_vpc_route_table.private_rt.id
+}
+
+# Private подсеть в зоне C
+resource "yandex_vpc_subnet" "private_subnet_c" {
+  name           = "private-subnet-c"
+  description    = "Private subnet for ASP.NET app in zone C"
+  folder_id      = var.folder_id
+  network_id     = yandex_vpc_network.app_vpc.id
+  zone           = "ru-central1-c"
+  v4_cidr_blocks = ["10.0.22.0/24"]
   route_table_id = yandex_vpc_route_table.private_rt.id
 }
 
