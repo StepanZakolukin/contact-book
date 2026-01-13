@@ -41,7 +41,7 @@ resource "yandex_lb_network_load_balancer" "app_nlb" {
     healthcheck {
       name = "http-healthcheck"
       http_options {
-        port = 5000
+        port = 80
         path = "/health"
       }
       healthy_threshold   = 2
@@ -151,7 +151,7 @@ resource "yandex_compute_instance" "app_servers" {
         -e YandexS3__BucketName="$${BUCKET_NAME}" \
         -e ASPNETCORE_ENVIRONMENT="Production" \
         -e REPLICA_ID="${count.index + 1}" \
-        -p 5000:8080 \
+        -p 80:8080 \
         cr.yandex/${var.registry_id}/${var.app_image_name}:1.0
       
       # Создаем health check эндпоинт с информацией о реплике

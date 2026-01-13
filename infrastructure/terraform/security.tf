@@ -9,7 +9,7 @@ resource "yandex_vpc_security_group" "app_sg" {
   ingress {
     protocol       = "TCP"
     v4_cidr_blocks = ["10.0.2.0/24", "10.0.12.0/24", "10.0.22.0/24"]
-    port           = 5000
+    port           = 80
     description    = "Allow inter-instance communication in all app subnets"
   }
 
@@ -35,7 +35,7 @@ resource "yandex_vpc_security_group_rule" "app_healthchecks" {
   security_group_binding = yandex_vpc_security_group.app_sg.id
   direction              = "ingress"
   protocol               = "TCP"
-  port                   = 5000
+  port                   = 80
   predefined_target      = "loadbalancer_healthchecks"
   description            = "Allow NLB health checks to app port (TCP)"
 }
