@@ -8,7 +8,7 @@ resource "yandex_vpc_security_group" "app_sg" {
   # Разрешить трафик из всех подсетей приложения
   ingress {
     protocol       = "TCP"
-    v4_cidr_blocks = ["10.0.2.0/24", "10.0.12.0/24", "10.0.22.0/24"]
+    v4_cidr_blocks = ["0.0.0.0/0"]
     port           = 80
     description    = "Allow inter-instance communication in all app subnets"
   }
