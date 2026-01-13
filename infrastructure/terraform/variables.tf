@@ -18,11 +18,6 @@ variable "app_image_id" {
   description = "ID образа диска приложения"
 }
 
-variable "database_image_id" {
-  type        = string
-  description = "ID образа диска базы данных"
-}
-
 variable "service_account_name" {
   type        = string
   description = "Имя сервисного аккаунта"
