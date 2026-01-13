@@ -54,3 +54,9 @@ variable "app_replica_count" {
   type        = number
   default     = 3
 }
+
+variable "availability_zones" {
+  description = "Список зон доступности для размещения реплик"
+  type        = list(string)
+  default     = ["ru-central1-a", "ru-central1-b", "ru-central1-c"]
+}
