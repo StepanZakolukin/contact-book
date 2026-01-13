@@ -44,7 +44,7 @@ variable "app_image_name" {
 variable "app_image_tag" {
   type        = string
   description = "Тег docker-образа приложения"
-  default     = "latest"
+  default     = "1.0"
 }
 
 variable "default_subnet_id" {

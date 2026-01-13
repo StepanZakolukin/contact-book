@@ -152,7 +152,7 @@ resource "yandex_compute_instance" "app_servers" {
         -e ASPNETCORE_ENVIRONMENT="Production" \
         -e REPLICA_ID="${count.index + 1}" \
         -p 80:8080 \
-        cr.yandex/${var.registry_id}/${var.app_image_name}:latest
+        cr.yandex/${var.registry_id}/${var.app_image_name}:1.0
       
       # Создаем health check эндпоинт с информацией о реплике
       sleep 5
