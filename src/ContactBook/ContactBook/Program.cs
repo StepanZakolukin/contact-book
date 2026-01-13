@@ -2,6 +2,7 @@ using ContactBook.DataAccess;
 using ContactBook.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,7 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.MapMetrics();
 app.MapHealthChecks("/health");
 
 app.Run();

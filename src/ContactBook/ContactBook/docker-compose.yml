@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  twenture:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    ports:
+      - "5000:5000"
+    networks:
+      - monitoring
+
+  prometheus:
+    build:
+      context: .
+      dockerfile: Dockerfile.prometheus
+    ports:
+       - "9090:9090"
+    networks:
+       - monitoring
+    depends_on:
+       - twenture
+
+networks:
+  monitoring:
+    driver: bridge
