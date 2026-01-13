@@ -13,19 +13,9 @@ variable "ssh_key" {
   description = "Публичный ssh ключ"
 }
 
-variable "app_image_id" {
-  type        = string
-  description = "ID образа диска приложения"
-}
-
 variable "database_image_id" {
   type        = string
   description = "ID образа диска базы данных"
-}
-
-variable "service_account_name" {
-  type        = string
-  description = "Имя сервисного аккаунта"
 }
 
 variable "registry_id" {
@@ -36,12 +26,6 @@ variable "registry_id" {
 variable "app_image_name" {
   description = "Docker image name"
   type        = string
-}
-
-variable "postgres_pwd" {
-  description = "PostgreSQL password"
-  type        = string
-  sensitive   = true
 }
 
 variable "default_availability_zone" {
