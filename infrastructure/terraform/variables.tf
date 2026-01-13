@@ -8,12 +8,7 @@ variable "folder_id" {
   description = "ID директории в облаке"
 }
 
-variable "default_availability_zone" {
-  type        = string
-  description = "Зона доступности по умолчанию"
-}
-
-variable "ssh-key" {
+variable "ssh_key" {
   type        = string
   description = "Публичный ssh ключ"
 }
@@ -26,4 +21,25 @@ variable "app_image_id" {
 variable "database_image_id" {
   type        = string
   description = "ID образа диска базы данных"
+}
+
+variable "service_account_name" {
+  type        = string
+  description = "Имя сервисного аккаунта"
+}
+
+variable "registry_id" {
+  description = "Yandex Container Registry ID"
+  type        = string
+}
+
+variable "app_image_name" {
+  description = "Docker image name"
+  type        = string
+}
+
+variable "postgres_pwd" {
+  description = "PostgreSQL password"
+  type        = string
+  sensitive   = true
 }

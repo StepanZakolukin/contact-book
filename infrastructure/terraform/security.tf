@@ -45,9 +45,8 @@ resource "yandex_vpc_security_group_rule" "app_healthchecks" {
   direction              = "ingress"
   protocol               = "TCP"
   port                   = 5000
-
-  predefined_target = "loadbalancer_healthchecks"
-  description       = "Allow NLB health checks to app port (TCP)"
+  predefined_target      = "loadbalancer_healthchecks"
+  description            = "Allow NLB health checks to app port (TCP)"
 }
 
 # SECURITY GROUP: PostgreSQL
