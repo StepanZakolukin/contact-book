@@ -44,6 +44,12 @@ variable "default_availability_zone" {
   default 	  = "ru-central1-a"
 }
 
+variable "database_image_id" {
+  type        = string
+  description = "ID образа диска базы данных"
+}
+
+
 variable "app_replica_count" {
   description = "Количество реплик приложения"
   type        = number
