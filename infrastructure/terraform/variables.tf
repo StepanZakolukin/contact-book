@@ -53,11 +53,11 @@ variable "database_image_id" {
 variable "app_replica_count" {
   description = "Количество реплик приложения"
   type        = number
-  default     = 3
+  default     = 2
 }
 
 variable "availability_zones" {
-  description = "Список зон доступности для размещения реплик"
+  description = "Available zones for deployment"
   type        = list(string)
-  default     = ["ru-central1-a", "ru-central1-b", "ru-central1-c"]
+  default     = ["ru-central1-a", "ru-central1-b"]
 }

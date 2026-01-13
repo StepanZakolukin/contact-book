@@ -52,17 +52,6 @@ resource "yandex_vpc_subnet" "private_subnet_b" {
   route_table_id = yandex_vpc_route_table.private_rt.id
 }
 
-# Private подсеть в зоне C
-resource "yandex_vpc_subnet" "private_subnet_c" {
-  name           = "private-subnet-c"
-  description    = "Private subnet for ASP.NET app in zone C"
-  folder_id      = var.folder_id
-  network_id     = yandex_vpc_network.app_vpc.id
-  zone           = "ru-central1-c"
-  v4_cidr_blocks = ["10.0.22.0/24"]
-  route_table_id = yandex_vpc_route_table.private_rt.id
-}
-
 # Database подсеть (PostgreSQL)
 # Тоже приватная, тоже с выходом через NAT (если вдруг БД нужно тянуть обновления/пакеты)
 resource "yandex_vpc_subnet" "db_subnet" {
